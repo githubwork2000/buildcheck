@@ -139,21 +139,16 @@ function Compare-DNS { #we can make an array here if needed
   return $true
 }
 
-function Get-TimeZone {
-    [CmdletBoundaryAttribute()]
+function Compare-TimeZone {
     Param ( 
         [Parameter(Mandatory = $true)]
-        [System.String]$TimeZone, 
-
-        [Parameter(Mandatory = $true)] 
-        [System.Management.Automation.PSObject]$Computer 
+        [System.String]$TimeZone
     )
 
     # Get the current system time zone.
-    $CurrentTimeZone = (Get-WmiObject -Class "Win32_TimeZone" -ComputerName $Computer).StandardName
-
+    [System.String]$CurrentTimeZone = (Get-WmiObject -Class "Win32_TimeZone").StandardName
     # Compare the time zones.
-    if ($TimeZone -eq $CurrentTimeZone) {
+    if ($CurrentTimeZone -match $TimeZone) {
         return $true
     }
     else {
@@ -269,6 +264,7 @@ Compare-CPU 12
 Compare-Disksize 127,20
 Test-NetworkConnection localhost
 Test-PingIP 1.1.1.1
+Compare-TimeZone Pacific
 
 }
 

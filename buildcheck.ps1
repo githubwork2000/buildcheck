@@ -1,12 +1,21 @@
-function Check-RAMMatch($RAM,$RAMVariable){
-      if ($RAM -eq $RAMVariable){
+function Compare-RAM{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [int]$RAM
+    )
+
+    $bytes = (Get-WmiObject -class "cim_physicalmemory" | Measure-Object -Property Capacity -Sum).Sum
+    $gig = ($bytes / 1024 / 1024 / 1024)
+
+      if ($RAM -like $gig){
           return $true
       } else {
           return $false
       }
 }
 
-function Check-CPUMatch {
+function Compare-CPU {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -16,35 +25,100 @@ function Check-CPUMatch {
     $ActualCPU = (Get-CimInstance Win32_Processor).numberoflogicalprocessors
 
     if ($ActualCPU -eq $TargetCPU) {
-        "The Actual CPU matches the Target CPU"
+        return $true
     } else {
-        "The Actual CPU does not match the Target CPU"
+        return $false
     }
 }
 
-function Check-DiskSize {
-    param(
-        [String]$diskName,
-        [Int]$desiredSize
+Function Test-IfValuesPresent {
+    <#
+    .SYNOPSIS
+    This function will compare the items of two arrays and check if all the items from one
+    array exists in the other array.
+    #>
+    
+        Param (
+            [Parameter(Mandatory)]$ArrayA,
+            [Parameter(Mandatory)]$ArrayB
+        )
+        
+        $ElementsInA = @()
+        foreach ($element in $ArrayA)
+        {
+            if($ArrayB -contains $element)
+            {
+                $ElementsInA += $element
+            }
+        }
+        if($ArrayA.Length -eq $ElementsInA.Length)
+        {
+            Write-Output $True
+        }
+        else
+        {
+            Write-Output $False
+        }
+    }
+
+function Compare-Disksize {
+    Param (
+        [Parameter(Mandatory)][Array]$disksizesneeded
     )
+    $alldisksizes = @()
 
-    # Get the drive object using the disk name
-    $disk = Get-Volume -Name $diskName
+    # Get list of disks
+    $disks = Get-PhysicalDisk
 
-    # Check if the size of the disk is smaller than desired
-    if ($disk.Size -lt $desiredSize) {
-        # If it is, return false
-        Write-Host "Disk size is less than desired size" -ForegroundColor Red
-        $returnValue = $false
-    } else {
-        # Else if it is larger than or equal to the desired size, return true
-        Write-Host "Disk size is larger than or equal to desired size" -ForegroundColor Green
-        $returnValue = $true
-    } 
+    # Build the output object
+    foreach($disk in $disks){ 
+        # Calculate size in GB
+        $size = [Math]::Round(($disk.Size/1024/1024/1024),2)
+                                                 
+        $alldisksizes += $size
+    }
 
-    # Return the value
-    return $returnValue
+    $ElementsInA = @()
+    foreach ($element in $disksizesneeded)
+    {
+        if($alldisksizes -contains $element)
+        {
+            $ElementsInA += $element
+        }
+    }
+    if($disksizesneeded.Length -eq $ElementsInA.Length)
+    {
+        Write-Output $True
+    }
+    else
+    {
+        Write-Output $False
+    }
+
 }
+
+Function Get-DiskSizesInGB {  
+    # Get list of disks
+    $disks = Get-PhysicalDisk
+
+    # Build the output object
+    $result = foreach($disk in $disks){ 
+        # Calculate size in GB
+        $size = [Math]::Round(($disk.Size/1024/1024/1024),2)
+                                                 
+        # Return result set
+        [PSCustomObject] @{
+            'Name'          = $disk.FriendlyName
+            'Size (GB)'     = $size
+        }
+    }
+
+    # Return data
+    Write-Output -InputObject $result
+}
+
+
+
 
 function Test-NetworkConnection($hostname){
     $networkConnectionTest = Test-NetConnection -ComputerName $hostname -CommonTCPPort 443
@@ -55,7 +129,7 @@ function Test-NetworkConnection($hostname){
     }
 }
 
-function Check-DNS {
+function Get-DNS {
   param($dnsVariable)
   
   # Get all the networking adapters
@@ -72,7 +146,7 @@ function Check-DNS {
   return $true
 }
 
-function Check-TimeZone {
+function Get-TimeZone {
     [CmdletBoundaryAttribute()]
     Param ( 
         [Parameter(Mandatory = $true)]
@@ -94,7 +168,7 @@ function Check-TimeZone {
     }
 }
 
-function Check-GroupPolicyAgainstVariable {
+function Get-GroupPolicyAgainstVariable {
   param (
     [Parameter(Mandatory=$true, Position=0)]
     [string]$Variable
@@ -131,7 +205,7 @@ function Check-GroupPolicyAgainstVariable {
 #Check-GroupPolicyAgainstVariable -Variable $variable
 
 
-Function Check-DSCStatus {
+Function Get-DSCStatus {
     Param (
         [string]$ComputerName
     )
@@ -181,7 +255,7 @@ Function Get-LocalMountPoints {
     $mounts | Select-Object @{Name="Label";Expression={$_.Label}},@{Name="Name";Expression={$_.Name}},@{Name="Available";Expression={[math]::Round($_.FreeSpace/1GB,2) + ' GB'}} 
 }
 
-Get-LocalMountPoints
+#Get-LocalMountPoints
 
 
 function Main {
@@ -196,6 +270,11 @@ ____        _ _     _  _____ _               _
                                                    
 
 '@
+
+Compare-RAM 8
+Compare-CPU 12
+Compare-Disksize 127
+
 }
 
 Main

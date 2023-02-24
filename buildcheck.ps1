@@ -61,7 +61,7 @@ Function Test-IfValuesPresent {
         }
     }
 
-function Compare-Disksize {
+function Compare-Disksizes {
     Param (
         [Parameter(Mandatory)][Array]$disksizesneeded
     )
@@ -97,31 +97,8 @@ function Compare-Disksize {
 
 }
 
-Function Get-DiskSizesInGB {  
-    # Get list of disks
-    $disks = Get-PhysicalDisk
-
-    # Build the output object
-    $result = foreach($disk in $disks){ 
-        # Calculate size in GB
-        $size = [Math]::Round(($disk.Size/1024/1024/1024),2)
-                                                 
-        # Return result set
-        [PSCustomObject] @{
-            'Name'          = $disk.FriendlyName
-            'Size (GB)'     = $size
-        }
-    }
-
-    # Return data
-    Write-Output -InputObject $result
-}
-
-
-
-
 function Test-NetworkConnection($hostname){
-    $networkConnectionTest = Test-NetConnection -ComputerName $hostname -CommonTCPPort 443
+    $networkConnectionTest = Test-NetConnection -ComputerName $hostname -CommonTCPPort 80 #need to change port probably
     if ($networkConnectionTest.TcpTestSucceeded -eq $true){
         write-host "Connection to $hostname successful"
     } else{
@@ -129,7 +106,23 @@ function Test-NetworkConnection($hostname){
     }
 }
 
-function Get-DNS {
+function Test-PingIP { 
+    param ([string]$IPAddr) 
+ 
+    # Use the Test-Connection cmdlet to test a connection towards the specified IP address 
+    # Use errors action silentlycontinue in case the IP is unavailable
+    $result = Test-Connection -ComputerName $IPAddr -Count 1 -ErrorAction SilentlyContinue 
+ 
+    # if Test-Conection returns no results, return false
+    if(-not $result){ 
+        return $false; 
+    }else {
+        # Results were returned, so return true
+        return $true;
+    } 
+}
+
+function Compare-DNS { #we can make an array here if needed
   param($dnsVariable)
   
   # Get all the networking adapters
@@ -273,7 +266,8 @@ ____        _ _     _  _____ _               _
 
 Compare-RAM 8
 Compare-CPU 12
-Compare-Disksize 127
+Compare-Disksize 127,20
+
 
 }
 

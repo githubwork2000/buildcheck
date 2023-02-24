@@ -98,11 +98,11 @@ function Compare-Disksizes {
 }
 
 function Test-NetworkConnection($hostname){
-    $networkConnectionTest = Test-NetConnection -ComputerName $hostname -CommonTCPPort 80 #need to change port probably
+    $networkConnectionTest = Test-NetConnection -ComputerName $hostname -CommonTCPPort SMB #need to change port probably
     if ($networkConnectionTest.TcpTestSucceeded -eq $true){
-        write-host "Connection to $hostname successful"
+        return $True
     } else{
-        write-host "Connection to $hostname failed"
+        return $False
     }
 }
 
@@ -155,7 +155,7 @@ function Get-TimeZone {
     # Compare the time zones.
     if ($TimeZone -eq $CurrentTimeZone) {
         return $true
-    } 
+    }
     else {
         return $false
     }
@@ -267,7 +267,8 @@ ____        _ _     _  _____ _               _
 Compare-RAM 8
 Compare-CPU 12
 Compare-Disksize 127,20
-
+Test-NetworkConnection localhost
+Test-PingIP 1.1.1.1
 
 }
 

@@ -212,9 +212,6 @@ Function Get-DownloadFile {
 }
 
 function Test-DriveSpeed {
-
-    #need to CD to each mountpoint, otherwise diskspd doesnt like the drive supplied
-    #C:\Users\Administrator\DiskSpd\amd64\diskspd -c2G -b4K -F8 -r -o32 -W60 -d60 -Sh testfile.dat
     $result = & .\diskspd\amd64\diskspd.exe -c2G -b4K -F8 -r -o32 -W60 -d60 -Sh testfile.dat
     return $result
 }

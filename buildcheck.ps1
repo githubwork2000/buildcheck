@@ -161,13 +161,14 @@ function Get-GroupPolicyAgainstVariable {
     [Parameter(Mandatory=$true, Position=0)]
     [string]$Variable
   )
+    Install-WindowsFeature GPMC #this has to be installed on the local box.
 
   # Initialize the empty array of group policy names
   $policyNames = @()
 
   # Get the group policies configured on the computer
   # This cmdlet will get both Machine and User configurations 
-  $collection = Get-GPO -All
+  $collection = Get-GPO -All #you have to be using a domain account for this to work.
 
   # Iterate over all the found group policies
   foreach($gpObject in $collection) {
@@ -194,31 +195,14 @@ function Get-GroupPolicyAgainstVariable {
 
 
 Function Get-DSCStatus {
-    Param (
-        [string]$ComputerName
-    )
-
-    # Get all available DSC configurations
-    $AllConfigurations = Get-DscConfiguration -ComputerName $ComputerName 
-
-    # Get the decided configuration
-    $CurrentDSCConfig = Get-DscLocalConfigurationManager -ComputerName $ComputerName
-
-    # Iterate through each configuration
-    foreach ($Config in $AllConfigurations){
-        if($CurrentDSCConfig.ConfigurationMode -eq $Config.ConfigurationMode){
-            $Name = $Config.Name.Substring($Config.Name.LastIndexOf("\") + 1)
-            Write-Host "Checking $Name configuration..." -ForegroundColor Cyan
-
-            # Compare current DSC status with the decided configuration
-            $CompareResult = Compare-DscConfiguration -ComputerName $ComputerName -Path C:\Program Files\WindowsPowerShell\DscService\Configuration -ConfigurationMode $Config.ConfigurationMode
-            if($CompareResult.Status -eq "Success"){
-                Write-Host "The $Name configuration is up to date." -ForegroundColor Green
+    $resultStatus = Get-DscConfigurationStatus | Select-Object Status -ExpandProperty Status
+            if($resultStatus -eq "Success"){
+                return $True
             } else {
-                Write-Host "The $Name configuration is not up to date." -ForegroundColor Red
+                return $False
             }
-        }
-    }
+        
+    
 }
 
 Function Get-DownloadFile
@@ -265,6 +249,11 @@ Compare-Disksize 127,20
 Test-NetworkConnection localhost
 Test-PingIP 1.1.1.1
 Compare-TimeZone Pacific
+
+Get-GroupPolicyAgainstVariable
+Get-DSCStatus
+Get-DownloadFile
+Test-DriveSpeed
 
 }
 

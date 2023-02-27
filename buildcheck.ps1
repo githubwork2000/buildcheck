@@ -1,4 +1,4 @@
-function Compare-RAM{
+function Compare-RAM {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -8,11 +8,12 @@ function Compare-RAM{
     $bytes = (Get-WmiObject -class "cim_physicalmemory" | Measure-Object -Property Capacity -Sum).Sum
     $gig = ($bytes / 1024 / 1024 / 1024)
 
-      if ($RAM -like $gig){
-          return $true
-      } else {
-          return $false
-      }
+    if ($RAM -like $gig) {
+        return $true
+    }
+    else {
+        return $false
+    }
 }
 
 function Compare-CPU {
@@ -26,7 +27,8 @@ function Compare-CPU {
 
     if ($ActualCPU -eq $TargetCPU) {
         return $true
-    } else {
+    }
+    else {
         return $false
     }
 }
@@ -38,28 +40,24 @@ Function Test-IfValuesPresent {
     array exists in the other array.
     #>
     
-        Param (
-            [Parameter(Mandatory)]$ArrayA,
-            [Parameter(Mandatory)]$ArrayB
-        )
+    Param (
+        [Parameter(Mandatory)]$ArrayA,
+        [Parameter(Mandatory)]$ArrayB
+    )
         
-        $ElementsInA = @()
-        foreach ($element in $ArrayA)
-        {
-            if($ArrayB -contains $element)
-            {
-                $ElementsInA += $element
-            }
-        }
-        if($ArrayA.Length -eq $ElementsInA.Length)
-        {
-            Write-Output $True
-        }
-        else
-        {
-            Write-Output $False
+    $ElementsInA = @()
+    foreach ($element in $ArrayA) {
+        if ($ArrayB -contains $element) {
+            $ElementsInA += $element
         }
     }
+    if ($ArrayA.Length -eq $ElementsInA.Length) {
+        Write-Output $True
+    }
+    else {
+        Write-Output $False
+    }
+}
 
 function Compare-Disksizes {
     Param (
@@ -71,37 +69,34 @@ function Compare-Disksizes {
     $disks = Get-PhysicalDisk
 
     # Build the output object
-    foreach($disk in $disks){ 
+    foreach ($disk in $disks) { 
         # Calculate size in GB
-        $size = [Math]::Round(($disk.Size/1024/1024/1024),2)
+        $size = [Math]::Round(($disk.Size / 1024 / 1024 / 1024), 2)
                                                  
         $alldisksizes += $size
     }
 
     $ElementsInA = @()
-    foreach ($element in $disksizesneeded)
-    {
-        if($alldisksizes -contains $element)
-        {
+    foreach ($element in $disksizesneeded) {
+        if ($alldisksizes -contains $element) {
             $ElementsInA += $element
         }
     }
-    if($disksizesneeded.Length -eq $ElementsInA.Length)
-    {
+    if ($disksizesneeded.Length -eq $ElementsInA.Length) {
         Write-Output $True
     }
-    else
-    {
+    else {
         Write-Output $False
     }
 
 }
 
-function Test-NetworkConnection($hostname){
+function Test-NetworkConnection($hostname) {
     $networkConnectionTest = Test-NetConnection -ComputerName $hostname -CommonTCPPort SMB #need to change port probably
-    if ($networkConnectionTest.TcpTestSucceeded -eq $true){
+    if ($networkConnectionTest.TcpTestSucceeded -eq $true) {
         return $True
-    } else{
+    }
+    else {
         return $False
     }
 }
@@ -114,29 +109,31 @@ function Test-PingIP {
     $result = Test-Connection -ComputerName $IPAddr -Count 1 -ErrorAction SilentlyContinue 
  
     # if Test-Conection returns no results, return false
-    if(-not $result){ 
+    if (-not $result) { 
         return $false; 
-    }else {
+    }
+    else {
         # Results were returned, so return true
         return $true;
     } 
 }
 
-function Compare-DNS { #we can make an array here if needed
-  param($dnsVariable)
+function Compare-DNS {
+    #we can make an array here if needed
+    param($dnsVariable)
   
-  # Get all the networking adapters
-  $networkAdapters = Get-NetipConfiguration | Select-Object -ExpandProperty InterfaceAlias
+    # Get all the networking adapters
+    $networkAdapters = Get-NetipConfiguration | Select-Object -ExpandProperty InterfaceAlias
   
-  # Check each adapter's DNS server
-  foreach($adapter in $networkAdapters) {
-    $dnsServers = (Get-DnsClientServerAddress -InterfaceAlias $adapter).ServerAddresses
-    if($dnsServers -notcontains $dnsVariable) {
-      return $false
+    # Check each adapter's DNS server
+    foreach ($adapter in $networkAdapters) {
+        $dnsServers = (Get-DnsClientServerAddress -InterfaceAlias $adapter).ServerAddresses
+        if ($dnsServers -notcontains $dnsVariable) {
+            return $false
+        }
     }
-  }
   
-  return $true
+    return $true
 }
 
 function Compare-TimeZone {
@@ -157,36 +154,37 @@ function Compare-TimeZone {
 }
 
 function Get-GroupPolicyAgainstVariable {
-  param (
-    [Parameter(Mandatory=$true, Position=0)]
-    [string]$Variable
-  )
+    param (
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Variable
+    )
     Install-WindowsFeature GPMC #this has to be installed on the local box.
 
-  # Initialize the empty array of group policy names
-  $policyNames = @()
+    # Initialize the empty array of group policy names
+    $policyNames = @()
 
-  # Get the group policies configured on the computer
-  # This cmdlet will get both Machine and User configurations 
-  $collection = Get-GPO -All #you have to be using a domain account for this to work.
+    # Get the group policies configured on the computer
+    # This cmdlet will get both Machine and User configurations 
+    $collection = Get-GPO -All #you have to be using a domain account for this to work.
 
-  # Iterate over all the found group policies
-  foreach($gpObject in $collection) {
+    # Iterate over all the found group policies
+    foreach ($gpObject in $collection) {
 
-    # Get the domain path of the current policy 
-    $domainPath = $gpObject.Domain.split(".")
+        # Get the domain path of the current policy 
+        $domainPath = $gpObject.Domain.split(".")
 
-    # Add the name of the policy to the array 
-    $policyNames += ($domainPath[$domainPath.Length - 1] + '\') + 
-                    $gpObject.DisplayName
-  }
+        # Add the name of the policy to the array 
+        $policyNames += ($domainPath[$domainPath.Length - 1] + '\') + 
+        $gpObject.DisplayName
+    }
 
-  # Compare the array of policy names against the input variable
-  if($Variable -notin $policyNames) { 
-      Write-Output "The policy $Variable is not present on this machine."
-  } else {
-      Write-Output "The policy $Variable is applied to this machine."
-  }  
+    # Compare the array of policy names against the input variable
+    if ($Variable -notin $policyNames) { 
+        Write-Output "The policy $Variable is not present on this machine."
+    }
+    else {
+        Write-Output "The policy $Variable is applied to this machine."
+    }  
 }
 
 ## Usage example
@@ -194,19 +192,19 @@ function Get-GroupPolicyAgainstVariable {
 #Check-GroupPolicyAgainstVariable -Variable $variable
 
 
-Function Get-DSCStatus {
+Function Test-DSCStatus {
     $resultStatus = Get-DscConfigurationStatus | Select-Object Status -ExpandProperty Status
-            if($resultStatus -eq "Success"){
-                return $True
-            } else {
-                return $False
-            }
+    if ($resultStatus -eq "Success") {
+        return $True
+    }
+    else {
+        return $False
+    }
         
     
 }
 
-Function Get-DownloadFile
-{
+Function Get-DownloadFile {
     #download diskspd.exe from internet
     $url = 'https://github.com/Microsoft/diskspd/releases/latest/download/DiskSpd.zip'
     Invoke-WebRequest -Uri $url -OutFile ('diskspd.zip') -UseBasicParsing
@@ -217,20 +215,20 @@ function Test-DriveSpeed {
 
     #need to CD to each mountpoint, otherwise diskspd doesnt like the drive supplied
     #C:\Users\Administrator\DiskSpd\amd64\diskspd -c2G -b4K -F8 -r -o32 -W60 -d60 -Sh testfile.dat
-  $result = & .\diskspd\amd64\diskspd.exe -c2G -b4K -F8 -r -o32 -W60 -d60 -Sh testfile.dat
-  return $result
+    $result = & .\diskspd\amd64\diskspd.exe -c2G -b4K -F8 -r -o32 -W60 -d60 -Sh testfile.dat
+    return $result
 }
 
 
 Function Get-LocalMountPoints {
     $mounts = Get-WmiObject Win32_Volume -Filter 'DriveType=3'
-    $mounts | Select-Object @{Name="Label";Expression={$_.Label}},@{Name="Name";Expression={$_.Name}},@{Name="Available";Expression={[math]::Round($_.FreeSpace/1GB,2) + ' GB'}} 
+    $mounts | Select-Object @{Name = "Label"; Expression = { $_.Label } }, @{Name = "Name"; Expression = { $_.Name } }, @{Name = "Available"; Expression = { [math]::Round($_.FreeSpace / 1GB, 2) + ' GB' } } 
 }
 
 
 function Main {
-Clear-Host
-Write-Output @'
+    Clear-Host
+    Write-Output @'
 ____        _ _     _  _____ _               _    
 |  _ \      (_) |   | |/ ____| |             | |   
 | |_) |_   _ _| | __| | |    | |__   ___  ___| | __
@@ -241,18 +239,18 @@ ____        _ _     _  _____ _               _
 
 '@
 
-Compare-RAM 8
-Compare-CPU 12
-Compare-Disksize 127,20
-Test-NetworkConnection localhost
-Test-PingIP 1.1.1.1
-Compare-TimeZone Pacific
-Get-DSCStatus
-Get-DownloadFile
-Test-DriveSpeed
-Get-LocalMountPoints
+    Compare-RAM 8
+    Compare-CPU 12
+    Compare-Disksize 127, 20
+    Test-NetworkConnection localhost
+    Test-PingIP 1.1.1.1
+    Compare-TimeZone Pacific
+    Test-DSCStatus
+    Get-DownloadFile
+    Test-DriveSpeed
+    Get-LocalMountPoints
 
-#Get-GroupPolicyAgainstVariable
+    #Get-GroupPolicyAgainstVariable
 
 }
 

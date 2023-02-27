@@ -210,14 +210,14 @@ Function Get-DownloadFile
     #download diskspd.exe from internet
     $url = 'https://github.com/Microsoft/diskspd/releases/latest/download/DiskSpd.zip'
     Invoke-WebRequest -Uri $url -OutFile ('diskspd.zip') -UseBasicParsing
-    Expand-Archive DiskSpd.zip
+    Expand-Archive DiskSpd.zip -Force
 }
 
 function Test-DriveSpeed {
 
     #need to CD to each mountpoint, otherwise diskspd doesnt like the drive supplied
     #C:\Users\Administrator\DiskSpd\amd64\diskspd -c2G -b4K -F8 -r -o32 -W60 -d60 -Sh testfile.dat
-  $result = & .\diskspd\amd64\diskspd.exe 
+  $result = & .\diskspd\amd64\diskspd.exe -c2G -b4K -F8 -r -o32 -W60 -d60 -Sh testfile.dat
   return $result
 }
 
@@ -226,8 +226,6 @@ Function Get-LocalMountPoints {
     $mounts = Get-WmiObject Win32_Volume -Filter 'DriveType=3'
     $mounts | Select-Object @{Name="Label";Expression={$_.Label}},@{Name="Name";Expression={$_.Name}},@{Name="Available";Expression={[math]::Round($_.FreeSpace/1GB,2) + ' GB'}} 
 }
-
-#Get-LocalMountPoints
 
 
 function Main {
@@ -249,11 +247,12 @@ Compare-Disksize 127,20
 Test-NetworkConnection localhost
 Test-PingIP 1.1.1.1
 Compare-TimeZone Pacific
-
-Get-GroupPolicyAgainstVariable
 Get-DSCStatus
 Get-DownloadFile
 Test-DriveSpeed
+Get-LocalMountPoints
+
+#Get-GroupPolicyAgainstVariable
 
 }
 

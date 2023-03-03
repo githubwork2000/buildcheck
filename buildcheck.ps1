@@ -158,7 +158,6 @@ function Get-GroupPolicyAgainstVariable {
         [Parameter(Mandatory = $true, Position = 0)]
         [string]$Variable
     )
-    Install-WindowsFeature GPMC #this has to be installed on the local box.
 
     # Initialize the empty array of group policy names
     $policyNames = @()
@@ -170,12 +169,8 @@ function Get-GroupPolicyAgainstVariable {
     # Iterate over all the found group policies
     foreach ($gpObject in $collection) {
 
-        # Get the domain path of the current policy 
-        $domainPath = $gpObject.Domain.split(".")
-
         # Add the name of the policy to the array 
-        $policyNames += ($domainPath[$domainPath.Length - 1] + '\') + 
-        $gpObject.DisplayName
+        $policyNames += $gpObject.DisplayName
     }
 
     # Compare the array of policy names against the input variable
@@ -186,10 +181,6 @@ function Get-GroupPolicyAgainstVariable {
         Write-Output "The policy $Variable is applied to this machine."
     }  
 }
-
-## Usage example
-#$variable = 'Default Domain Policy'
-#Check-GroupPolicyAgainstVariable -Variable $variable
 
 
 Function Test-DSCStatus {
@@ -205,6 +196,7 @@ Function Test-DSCStatus {
 }
 
 Function Get-DownloadFile {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     #download diskspd.exe from internet
     $url = 'https://github.com/Microsoft/diskspd/releases/latest/download/DiskSpd.zip'
     Invoke-WebRequest -Uri $url -OutFile ('diskspd.zip') -UseBasicParsing
@@ -236,18 +228,28 @@ ____        _ _     _  _____ _               _
 
 '@
 
-    Compare-RAM 8
+    Write-Output "Comparing CPU"
     Compare-CPU 12
-    Compare-Disksize 127, 20
+    Write-Output "Comparing RAM"
+    Compare-RAM 8
+    Write-Output "Comparing Disk Sizes"
+    Compare-Disksizes 127, 20
+    Write-Output "Testing host"
     Test-NetworkConnection localhost
+    Write-Output "Testing IP"
     Test-PingIP 1.1.1.1
+    Write-Output "Comparing Time Zone"
     Compare-TimeZone Pacific
+    Write-Output "Testing DSC"
     Test-DSCStatus
+    Write-Output "Downloading diskspd"
     Get-DownloadFile
+    Write-Output "Testing disk speed (this can take awhile)"
     Test-DriveSpeed
+    Write-Output "Getting Mount Points"
     Get-LocalMountPoints
-
-    #Get-GroupPolicyAgainstVariable
+    Write-Output "Comparing GPO Name"
+    Get-GroupPolicyAgainstVariable 'Default Domain Policy'
 
 }
 

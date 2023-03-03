@@ -214,6 +214,13 @@ Function Get-LocalMountPoints {
     $mounts | Select-Object @{Name = "Label"; Expression = { $_.Label } }, @{Name = "Name"; Expression = { $_.Name } }, @{Name = "Available"; Expression = { [math]::Round($_.FreeSpace / 1GB, 2) + ' GB' } } 
 }
 
+Fucntion Get-NonWindowsServices {
+    $NonDefaultServices = Get-wmiobject win32_service | where { $_.Caption -notmatch "Windows" -and $_.PathName -notmatch "Windows" -and
+    $_.PathName -notmatch "policyhost.exe" -and $_.Name -ne "LSM" -and $_.PathName -notmatch "OSE.EXE" -and $_.PathName -notmatch
+    "OSPPSVC.EXE" -and $_.PathName -notmatch "Microsoft Security Client" }
+
+$NonDefaultServices.DisplayName
+}
 
 function Main {
     Clear-Host
@@ -250,6 +257,8 @@ ____        _ _     _  _____ _               _
     Get-LocalMountPoints
     Write-Output "Comparing GPO Name"
     Get-GroupPolicyAgainstVariable 'Default Domain Policy'
+    Write-Output "Getting Non-Windows Services"
+    Get-NonWindowsServices
 
 }
 
